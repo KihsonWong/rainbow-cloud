@@ -11,4 +11,4 @@ loo_up.o: look_up.h
 
 .PHONY: clean
 clean:
-	rm server $(objects) 
+	rm server
