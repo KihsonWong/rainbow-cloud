@@ -12,6 +12,8 @@ Fuction List:			int tcp_init() 							//用于初始化操作
  
 #include "tcp_net_socket.h"
 
+char heart_packet[HEARTLENGTH] = "HOLD ON CONNECTING HEART";
+
 /**server receive message and handler
   *input: dinfo[][] device infomation
   *input: rid rainbow id
@@ -45,9 +47,9 @@ int serverMessageHandler(DEVICE_INFO dinfo[RAINBOWMAX][CLIENTMAX+1], UINT32 rid,
 			for(tmp_cid=1;tmp_cid<CLIENTMAX;tmp_cid++) {
                 if (dinfo[rid][tmp_cid].fd != -1) {
 					tmp_cid_num++;
-                    if (ret != write(dinfo[rid][tmp_cid].fd, buf, 1024)) {
+                    if (ret != write(dinfo[rid][tmp_cid].fd, buf, ret)) {
 						ret = -1;
-                        perror("device write error.\n");
+                        perror("send to device error");
 					}
 				}
 			}
@@ -76,9 +78,9 @@ int serverMessageHandler(DEVICE_INFO dinfo[RAINBOWMAX][CLIENTMAX+1], UINT32 rid,
 			    return ret;
 			}
 			printf("Client Read: %d bytes read.\n", ret);
-			if (ret != write(dinfo[rid][0].fd, buf, 1024)) {
+			if (ret != write(dinfo[rid][0].fd, buf, ret)) {
                 ret = -1;
-				perror("rainbow write error.\n");
+				perror("send to rainbow error");
 			}
 			memset(buf, 0, 1024);
 			printf("client send msg to rainbow success.\n");
@@ -89,7 +91,7 @@ int serverMessageHandler(DEVICE_INFO dinfo[RAINBOWMAX][CLIENTMAX+1], UINT32 rid,
 }
 
 /**get current socket's rainbowid or cid*/
-int getDoubleId(DEVICE_INFO **dinfo, UINT32 *currid, UINT32 *curcid, int curfd)
+int getDoubleId(DEVICE_INFO dinfo[RAINBOWMAX][CLIENTMAX+1], UINT32 *currid, UINT32 *curcid, int curfd)
 {
 	UINT32 rainbowid, cid;
 	
@@ -98,13 +100,13 @@ int getDoubleId(DEVICE_INFO **dinfo, UINT32 *currid, UINT32 *curcid, int curfd)
               if (dinfo[rainbowid][cid].fd == curfd) {
                   *currid = rainbowid;
 				  *curcid = cid;
-			      printf("get current rainbowid: %d, cid: %d", rainbowid, cid);
+			      printf("get current rainbowid: %d, cid: %d, fd: %d\n", rainbowid, cid, curfd);
 			      return 0;
 			  }
 		  }
 	}
 	if (cid == CLIENTMAX+1 && rainbowid == RAINBOWMAX) {
-        printf("get current double id fail!");
+        printf("get current double id fail!\n");
 		return -1;
 	}
 }
@@ -121,12 +123,12 @@ UINT32 getRainbowId(char *str)
 
 	id = atoi(temp);
 	if (id == 0) {
-		printf("getRainbowId fail!");
+		printf("getRainbowId fail!\n");
 	} else if (id > RAINBOWMAX) {
         id = 0;
-		printf("getRainbowId exceed maxmum!");
+		printf("getRainbowId exceed maxmum!\n");
 	} else {
-        printf("get rainbow id: %d", id);
+        printf("get rainbow id: %d\n", id);
 	}
 
 	return id;
@@ -143,12 +145,12 @@ UINT32 getClientId(char *str)
 
 	id = atoi(temp);
 	if (id == 0) {
-		printf("get rainbow id fail from client!");
+		printf("get rainbow id fail from client!\n");
 	} else if (id > RAINBOWMAX) {
         id = 0;
-		printf("get rainbow id exceed maxmum from client!");
+		printf("get rainbow id exceed maxmum from client!\n");
 	} else {
-        printf("get rainbow id which client want to connect: %d", id);
+        printf("get rainbow id which client want to connect: %d\n", id);
 	}
 
 	return id;

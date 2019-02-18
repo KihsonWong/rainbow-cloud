@@ -27,10 +27,8 @@ Fuction List:
 #define TEMPMAX 1000  //the num is the maximal value that clients connect cloud server at the same time
 #define HEARTLENGTH 24
 #define AUTHASKLENGTH 12
-#define AUTHRAINBOWLENGTH 11
-#define AUTHRAINBOWCLIENTLENGTH 38
-
-char heart_packet[HEARTLENGTH] = "HOLD ON CONNECTING HEART";
+#define AUTHRAINBOWLENGTH 12
+#define AUTHRAINBOWCLIENTLENGTH 30
 
 typedef unsigned int UINT32;
 
@@ -57,7 +55,7 @@ extern int updateMaxFD(fd_set fds, int maxfd);
 extern UINT32 getRainbowId(char *str);
 extern void clearDeviceTable(DEVICE_INFO *device);
 extern UINT32 getClientId(char *str);
-extern int getDoubleId(DEVICE_INFO **dinfo, UINT32 *currid, UINT32 *curcid, int curfd);
+extern int getDoubleId(DEVICE_INFO dinfo[RAINBOWMAX][CLIENTMAX+1], UINT32 *currid, UINT32 *curcid, int curfd);
 extern int serverMessageHandler(DEVICE_INFO dinfo[RAINBOWMAX][CLIENTMAX+1], UINT32 rid, UINT32 cid);
 
 

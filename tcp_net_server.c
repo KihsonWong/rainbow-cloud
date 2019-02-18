@@ -9,14 +9,15 @@ Fuction List:			int tcp_init() 							//用于初始化操作
 ********************************************************************/
  
 #include "tcp_net_socket.h"
-#include "look_up.h"
+//#include "look_up.h"
 
 int main(int argc, char *argv[])
 {
   signalhandler();
 
   int sfd;
-  FD_INFO fd_temp[TEMPMAX], temp;  
+  FD_INFO fd_temp[TEMPMAX];
+  UINT32 temp;  
   DEVICE_INFO device[RAINBOWMAX][CLIENTMAX+1];
   int maxfd, curfd;
   UINT32 cid, rainbowid, curcid, currainbowid;
@@ -29,7 +30,7 @@ int main(int argc, char *argv[])
   char tmp_buff[100];
 
   memset(buf1, 0, 1024);
-  memset(buf2, 0, 1024);
+  //memset(buf2, 0, 1024);
 
   sfd = tcp_init();
   maxfd = sfd;
@@ -49,8 +50,8 @@ int main(int argc, char *argv[])
       }
 
   char auth_ask[AUTHASKLENGTH] = "Who are you?";   
-  char auth_rainbow[AUTHRAINBOWLENGTH] = "I'm rainbow";
-  char auth_rainbow_client[AUTHRAINBOWCLIENTLENGTH] = "I'm rainbow client, I want to connect ";
+  char auth_rainbow[AUTHRAINBOWLENGTH] = "I'm rainbow ";
+  char auth_rainbow_client[AUTHRAINBOWCLIENTLENGTH] = "I'm client, I want to connect ";
   
   while(1){	
     //"readfd" and "timeout" change after every select(), maxfd maybe change.
@@ -79,8 +80,8 @@ int main(int argc, char *argv[])
 			  break;
 		  }  
           printf("device connect success, start confirming device type and authentication...\n");
-		  if (AUTHASKLENGTH != write(fd_temp[temp].fd, auth_ask, AUTHASKLENGTH) {
-              perror("write device error.\n");
+		  if (AUTHASKLENGTH != write(fd_temp[temp].fd, auth_ask, AUTHASKLENGTH)) {
+              perror("write device error");
 			  break;
 		  }
 		  if(fd_temp[temp].fd  > maxfd) maxfd = fd_temp[temp].fd ;
@@ -107,17 +108,17 @@ int main(int argc, char *argv[])
                    ret = read(fd_temp[temp].fd, buf1, 1024);
 				   if (ret == -1) {
 				   	   FD_CLR(fd_temp[temp].fd, &readfds_bak);//clr from readfds
+                       perror("server read faile");
+					   if (close(fd_temp[temp].fd) == -1) {
+                          perror("close device fail"); 
+                       }
                        //release one position
                        fd_temp[temp].fd = -1;   
                        fd_temp[temp].index = -1;
-                       perror("server read failed.");
-					   if (close(fd_temp[temp].fd) == -1) {
-                          perror("close device fail!"); 
-                       }
 					   break;
 				   } else if (ret == 0) { //device closed
                        if (close(fd_temp[temp].fd) == -1) {
-                          perror("close device fail!"); 
+                          perror("close device fail"); 
                        }
                        FD_CLR(fd_temp[temp].fd, &readfds_bak);//clr from readfds
                        //release one position
@@ -126,19 +127,50 @@ int main(int argc, char *argv[])
                        printf("device disconnected!\n");
 					   break;
 				   }
-				   if (strcmp(buf1, auth_rainbow)) {
+				   if (strncmp(buf1, auth_rainbow, AUTHRAINBOWLENGTH)==0 && (ret > AUTHRAINBOWLENGTH)) {
 				   	   temp_id = getRainbowId(buf1);
 					   if (temp_id == 0) {
+                           strcpy(tmp_buff, "device connected fail!");
+                           if (0 >= write(fd_temp[temp].fd, tmp_buff, 100)) {
+                               perror("write device error");
+                           }
+                           memset(tmp_buff, 0, 100);
+            
 					   	   FD_CLR(fd_temp[temp].fd, &readfds_bak);//clr from readfds
+                           if (close(fd_temp[temp].fd) == -1) {
+                               perror("close device fail"); 
+                           }
                            //release one position
                            fd_temp[temp].fd = -1;   
                            fd_temp[temp].index = -1;
-						   if (close(fd_temp[temp].fd) == -1) {
-                               perror("close device fail!"); 
-                           }
                            break;
 					   }
-                       for (rainbowid=0;rainbowid<RAINBOWMAX;rainbowid++) {
+                       /*determine whether the rainbow id exits or not*/
+                       for(rainbowid=0;rainbowid<RAINBOWMAX;rainbowid++) {
+                           if (device[rainbowid][0].Id == temp_id) {
+                               printf("device connected fail, the rainbow id is in use!\n");
+                               strcpy(tmp_buff, "device connected fail, the rainbow id is in use!");
+                               if (0 >= write(fd_temp[temp].fd, tmp_buff, 100)) {
+                                   perror("write device error");
+                               }
+                               memset(tmp_buff, 0, 100);  
+                               
+                               if (close(fd_temp[temp].fd) == -1) {
+                                   perror("close device fail"); 
+							   }
+                               FD_CLR(fd_temp[temp].fd, &readfds_bak);//clr from readfds
+            
+                               fd_temp[temp].fd = -1;
+						       fd_temp[temp].index = -1;
+
+                               break;
+                           }
+                       }
+                       if (rainbowid < RAINBOWMAX) {//the rainbow id exit, so break
+                           break;
+                       }
+                       /*determine whether the rainbow queue is full or not*/
+                       for(rainbowid=0;rainbowid<RAINBOWMAX;rainbowid++) {
                             if (device[rainbowid][0].fd == -1) {
                                 device[rainbowid][0].fd = fd_temp[temp].fd;
 								device[rainbowid][0].type = DEVICE_RAINBOW;
@@ -148,79 +180,118 @@ int main(int argc, char *argv[])
 								fd_temp[temp].fd = -1;
 							    fd_temp[temp].index = -1;
 
-								printf("rainbow device connected!\n");
+                                strcpy(tmp_buff, "rainbow device certification success!");
+                                if (0 >= write(device[rainbowid][0].fd, tmp_buff, 100)) {
+                                    perror("write device error");
+                                }
+                                memset(tmp_buff, 0, 100);  
+            
+								printf("rainbow device certification success!\n");
 								break;
 							}
 					   }
-				   } else if (strcmp(buf1 , auth_rainbow_client)) {
-				       temp_id = getClientId(buf1);
+                       if (rainbowid == RAINBOWMAX) {
+                           printf("rainbow nummber is full, rainbow device can't connect!\n");
+						   strcpy(tmp_buff, "rainbow nummber is full, rainbow device can't connect!");
+						   if (0 >= write(fd_temp[temp].fd, tmp_buff, 100)) {
+                               perror("write device error");
+						   }
+
+							memset(tmp_buff, 0, 100);
+
+                            if (close(fd_temp[temp].fd) == -1) {
+                                perror("close device fail"); 
+							}
+                            FD_CLR(fd_temp[temp].fd, &readfds_bak);//clr from readfds
+            
+							fd_temp[temp].fd = -1;
+						    fd_temp[temp].index = -1;
+
+					   } 
+                       break;//for (temp=0;temp<TEMPMAX;temp++) save running time
+				   } else if (strncmp(buf1, auth_rainbow_client, AUTHRAINBOWCLIENTLENGTH)==0 && (ret > AUTHRAINBOWCLIENTLENGTH)) {
+				       temp_id = getClientId(buf1);//get rainbow id that client wants to connect
 					   if (temp_id == 0) {
+                           strcpy(tmp_buff, "device connected fail!");
+                           if (0 >= write(fd_temp[temp].fd, tmp_buff, 100)) {
+                               perror("write device error");
+                           }
+                           memset(tmp_buff, 0, 100);
+            
+                           if (close(fd_temp[temp].fd) == -1) {
+                               perror("close device fail"); 
+                           }
                            FD_CLR(fd_temp[temp].fd, &readfds_bak);//clr from readfds
                            //release one position
                            fd_temp[temp].fd = -1;   
                            fd_temp[temp].index = -1;
 
-						   if (close(fd_temp[temp].fd) == -1) {
-                               perror("close device fail!"); 
-                           }
-                           break;
+                           break;//for (temp=0;temp<TEMPMAX;temp++) 
 					   }
+                       /*lookup whether the rainbow device that clients want to connect exits or not*/
 					   for (rainbowid=0;rainbowid<RAINBOWMAX;rainbowid++) {
                             if (device[rainbowid][0].Id == temp_id) {
+                                /*determine if there is empty client position in the rainbow*/
                                 for (cid=1;cid<CLIENTMAX+1;cid++) {
-                                   if (device[temp_id][cid].fd == -1) {
-                                       device[temp_id][cid].fd = fd_temp[temp].fd;
-								       device[temp_id][cid].type = DEVICE_CLIENT;
-								       device[temp_id][cid].Id = temp_id;
-								       device[temp_id][cid].password = temp_id;
+                                   if (device[rainbowid][cid].fd == -1) {
+                                       device[rainbowid][cid].fd = fd_temp[temp].fd;
+								       device[rainbowid][cid].type = DEVICE_CLIENT;
+								       device[rainbowid][cid].Id = temp_id;
+								       device[rainbowid][cid].password = temp_id;
 
 								       fd_temp[temp].fd = -1;
 								       fd_temp[temp].index = -1;
-
-								       printf("client device connected rainbow!\n");
+            
+                                       strcpy(tmp_buff, "client device connected rainbow success!");
+                                       if (0 >= write(device[rainbowid][cid].fd, tmp_buff, 100)) {
+                                           perror("write device error");
+                                       }
+                                       memset(tmp_buff, 0, 100);
+            
+                                       //printf("fd: %d, Id: %d\n", device[rainbowid][cid].fd, device[rainbowid][cid].Id);
+								       printf("client device connected rainbow success!\n");
 								       break;
 							       }
 					            }
 								if (cid == CLIENTMAX+1) {
                                     printf("devices connecting rainbow are full, close the device!\n");
-									tmp_buff[100] = "devices connecting rainbow are full, close the device!";
+									strcpy(tmp_buff, "devices connecting rainbow are full, close the device!");
 									if (0 >= write(fd_temp[temp].fd, tmp_buff, 100)) {
                                         perror("write device error.\n");
 									}
 
 									memset(tmp_buff, 0, 100);
 									
-									fd_temp[temp].fd = -1;
-								    fd_temp[temp].index = -1;
-
-									FD_CLR(fd_temp[temp].fd, &readfds_bak);//clr from readfds
+                                    FD_CLR(fd_temp[temp].fd, &readfds_bak);//clr from readfds
 									if (close(fd_temp[temp].fd) == -1) {
                                         perror("close device fail!"); 
 									}
-								} else {//after client connected rainbow, need to exit the for
-                                    break;
-								}
+            
+									fd_temp[temp].fd = -1;
+								    fd_temp[temp].index = -1;
+
+								} 
+                                break;//for (rainbowid=0;rainbowid<RAINBOWMAX;rainbowid++)
 							}
 					   }
                        if (rainbowid == RAINBOWMAX) {
                            printf("device doesn't find the rainbow id, close the device!\n");
-						   tmp_buff[100] = "device doesn't find the rainbow id, close the device!";
+						   strcpy(tmp_buff, "device doesn't find the rainbow id, close the device!");
 						   if (0 >= write(fd_temp[temp].fd, tmp_buff, 100)) {
-                               perror("write device error.\n");
+                               perror("write device error");
 						   }
 
 							memset(tmp_buff, 0, 100);
-
+                            
+                            FD_CLR(fd_temp[temp].fd, &readfds_bak);//clr from readfds
+                            if (close(fd_temp[temp].fd) == -1) {
+                                perror("close device fail"); 
+                            }
+            
 							fd_temp[temp].fd = -1;
 						    fd_temp[temp].index = -1;
-
-						    FD_CLR(fd_temp[temp].fd, &readfds_bak);//clr from readfds
-							if (close(fd_temp[temp].fd) == -1) {
-                                perror("close device fail!"); 
-							}
-					   } else {//client device connected rainbow!
-                           
-					   }
+					   } 
+                       break;//for (temp=0;temp<TEMPMAX;temp++) 
 				   } else {
 				       printf("unknow device, close it!\n");
                        if (close(fd_temp[temp].fd) == -1) {
