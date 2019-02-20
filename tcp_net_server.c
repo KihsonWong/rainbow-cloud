@@ -38,6 +38,8 @@ int main(int argc, char *argv[])
   FD_ZERO(&readfds);
   FD_ZERO(&readfds_bak);
   FD_SET(sfd, &readfds_bak);
+  FD_SET(0, &readfds_bak); //0：standard input
+  //FD_SET(1, &readfds_bak); //1：standard output
 
   for (temp=0;temp<TEMPMAX;temp++) {
       fd_temp[temp].fd = -1;
@@ -65,6 +67,12 @@ int main(int argc, char *argv[])
       for(curfd=0;curfd<=maxfd;curfd++){
         if(!FD_ISSET(curfd, &readfds)){
           continue;
+        }
+        if (curfd == 0) {
+            ret = read(0, buf1, 1024);
+            printf( "this is a test: reserved interface!\n");
+            memset(buf1, 0, 1024);
+            break;
         }
         if(curfd == sfd){
           //this is cloud server's socket, no read or write, just tcp_accpet.
