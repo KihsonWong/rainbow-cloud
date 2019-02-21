@@ -114,6 +114,7 @@ int main(int argc, char *argv[])
           for (temp=0;temp<TEMPMAX;temp++) {
                if (FD_ISSET(fd_temp[temp].fd, &readfds)) {
                    ret = read(fd_temp[temp].fd, buf1, 1024);
+                   printf("%s\n", buf1);
 				   if (ret == -1) {
 				   	   FD_CLR(fd_temp[temp].fd, &readfds_bak);//clr from readfds
                        perror("server read faile");

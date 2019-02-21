@@ -30,10 +30,10 @@ int serverMessageHandler(DEVICE_INFO dinfo[RAINBOWMAX][CLIENTMAX+1], UINT32 rid,
     if (dinfo[rid][cid].type == DEVICE_RAINBOW) {
 		ret = read(dinfo[rid][cid].fd, buf, 1024);
         if (ret == -1) {
-            perror("Rainbow Read Failed.");
+            perror("Rainbow Read Failed");
 		} else if (ret == 0) {//device closed
             if(close(dinfo[rid][cid].fd) == -1){
-               perror("close rainbow fail!"); 
+               perror("close rainbow fail"); 
             }
 			clearDeviceTable(&dinfo[rid][cid]);
             printf("rainbow disconnected!\n");
@@ -64,10 +64,10 @@ int serverMessageHandler(DEVICE_INFO dinfo[RAINBOWMAX][CLIENTMAX+1], UINT32 rid,
 	} else {
         ret = read(dinfo[rid][cid].fd, buf, 1024);
 		if (ret == -1) {
-            perror("client Read Failed.");
+            perror("client Read Failed");
 		} else if (ret == 0) {//device closed
             if(close(dinfo[rid][cid].fd) == -1){
-               perror("close client device failed!"); 
+               perror("close client device failed"); 
             }
 			clearDeviceTable(&dinfo[rid][cid]);
             printf("client disconnected!\n");
@@ -100,7 +100,7 @@ int getDoubleId(DEVICE_INFO dinfo[RAINBOWMAX][CLIENTMAX+1], UINT32 *currid, UINT
               if (dinfo[rainbowid][cid].fd == curfd) {
                   *currid = rainbowid;
 				  *curcid = cid;
-			      printf("get current rainbowid: %d, cid: %d, fd: %d\n", rainbowid, cid, curfd);
+			      printf("The device is dinfo[%d][%d], it's fd is %d\n", rainbowid, cid, curfd);
 			      return 0;
 			  }
 		  }
