@@ -23,9 +23,9 @@ Fuction List:
 
 #define SERV_PORT 8181
 #define RAINBOWMAX 1000
-#define CLIENTMAX 3
+#define CLIENTMAX 6
 #define TEMPMAX 1000  //the num is the maximal value that clients connect cloud server at the same time
-#define HEARTLENGTH 24
+#define HEARTLENGTH 25
 #define AUTHASKLENGTH 12
 #define AUTHRAINBOWLENGTH 12
 #define AUTHRAINBOWCLIENTLENGTH 30

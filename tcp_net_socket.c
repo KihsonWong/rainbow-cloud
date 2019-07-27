@@ -38,8 +38,8 @@ int serverMessageHandler(DEVICE_INFO dinfo[RAINBOWMAX][CLIENTMAX+1], UINT32 rid,
 			clearDeviceTable(&dinfo[rid][cid]);
             printf("rainbow disconnected!\n");
 		} else {
-            if (ret == HEARTLENGTH && strcmp(buf, heart_packet)) {//judge if it is heart packet 
-                printf("RAINBOW HEARTBEAT: %s\n", heart_packet);
+            if (ret == (HEARTLENGTH-1) && (strcmp(buf, heart_packet)==0)) {//judge if it is heart packet 
+                printf("RAINBOW HEARTBEAT: %s\n\n", heart_packet);
                 memset(buf, 0, 1024);
 			    return ret;
 			} 
@@ -47,6 +47,7 @@ int serverMessageHandler(DEVICE_INFO dinfo[RAINBOWMAX][CLIENTMAX+1], UINT32 rid,
 			for(tmp_cid=1;tmp_cid<CLIENTMAX;tmp_cid++) {
                 if (dinfo[rid][tmp_cid].fd != -1) {
 					tmp_cid_num++;
+					printf("rainbow send msg to client %d\n", tmp_cid);
                     if (ret != write(dinfo[rid][tmp_cid].fd, buf, ret)) {
 						ret = -1;
                         perror("send to device error");
@@ -72,8 +73,8 @@ int serverMessageHandler(DEVICE_INFO dinfo[RAINBOWMAX][CLIENTMAX+1], UINT32 rid,
 			clearDeviceTable(&dinfo[rid][cid]);
             printf("client disconnected!\n");
 		} else {
-            if (ret == HEARTLENGTH && strcmp(buf, heart_packet)) {//judge if it is heart packet 
-                printf("CLIENT HEARTBEAT: %s\n", heart_packet);
+            if (ret == (HEARTLENGTH-1) && (strcmp(buf, heart_packet)==0)) {//judge if it is heart packet 
+                printf("CLIENT HEARTBEAT: %s\n\n", heart_packet);
                 memset(buf, 0, 1024);
 			    return ret;
 			}
@@ -140,9 +141,8 @@ UINT32 getClientId(char *str)
     char *temp = str;
     UINT32 id = 0;
 	UINT32 i;
-	
+	//printf("%s\n", temp);
 	temp += AUTHRAINBOWCLIENTLENGTH;
-
 	id = atoi(temp);
 	if (id == 0) {
 		printf("get rainbow id fail from client!\n");
